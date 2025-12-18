@@ -22,19 +22,22 @@ import com.mhss.app.data.tasksDataModule
 import com.mhss.app.database.di.databaseModule
 import com.mhss.app.di.coroutinesModule
 import com.mhss.app.di.networkModule
-import com.mhss.app.mybrain.di.MainPresentationModule
+// KSP generation for MainPresentationModule appears unavailable; using manual module
+import com.mhss.app.mybrain.di.mainPresentationModuleManual
 import com.mhss.app.mybrain.di.platformModule
+import com.mhss.app.mybrain.data.di.AppDataModule
 import com.mhss.app.preferences.PrefsConstants
 import com.mhss.app.preferences.di.PreferencesModule
 import com.mhss.app.presentation.di.AiPresentationModule
 import com.mhss.app.presentation.di.BookmarksPresentationModule
 import com.mhss.app.presentation.di.CalendarPresentationModule
 import com.mhss.app.presentation.di.DiaryPresentationModule
-import com.mhss.app.presentation.di.NotePresentationModule
+import com.mhss.app.presentation.di.notePresentationModule
 import com.mhss.app.presentation.di.SettingsPresentationModule
 import com.mhss.app.presentation.di.TasksPresentationModule
 import com.mhss.app.util.Constants
 import com.mhss.app.widget.di.WidgetModule
+import com.mhss.app.mybrain.domain.di.AppDomainModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.androidx.workmanager.koin.workManagerFactory
@@ -53,13 +56,13 @@ class MyBrainApplication : Application() {
             androidLogger()
             modules(
                 platformModule,
-                MainPresentationModule().module,
+                mainPresentationModuleManual,
                 AlarmModule().module,
                 databaseModule,
                 networkModule,
                 coroutinesModule,
                 PreferencesModule().module,
-                NotePresentationModule().module,
+                notePresentationModule,
                 noteDataModule,
                 DiaryPresentationModule().module,
                 diaryDataModule,
@@ -73,7 +76,9 @@ class MyBrainApplication : Application() {
                 bookmarksDataModule,
                 WidgetModule().module,
                 aiDataModule,
-                AiPresentationModule().module
+                AiPresentationModule().module,
+                AppDomainModule().module,
+                AppDataModule().module
             )
             workManagerFactory()
         }

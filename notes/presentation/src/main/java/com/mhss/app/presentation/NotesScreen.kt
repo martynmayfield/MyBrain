@@ -49,8 +49,6 @@ fun NotesScreen(
     val context = LocalContext.current
     val uiState = viewModel.notesUiState
     var orderSettingsVisible by remember { mutableStateOf(false) }
-    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
-    var openCreateFolderDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(uiState.error) {
         uiState.error?.let {
@@ -66,29 +64,21 @@ fun NotesScreen(
         },
         topBar = {
             MyBrainAppBar(
-                if (selectedTab == 0) stringResource(R.string.notes) else stringResource(
-                    R.string.folders
-                )
+                stringResource(R.string.notes)
             )
         },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    if (selectedTab == 0) {
-                        navController.navigate(
-                            Screen.NoteDetailsScreen()
-                        )
-                    } else {
-                        openCreateFolderDialog = true
-                    }
+                    navController.navigate(
+                        Screen.NoteDetailsScreen()
+                    )
                 },
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
                 Icon(
                     modifier = Modifier.size(25.dp),
-                    painter = if (selectedTab == 0) painterResource(R.drawable.ic_add) else painterResource(
-                        R.drawable.ic_create_folder
-                    ),
+                    painter = painterResource(R.drawable.ic_add),
                     contentDescription = stringResource(R.string.add_note),
                     tint = Color.White
                 )
@@ -96,38 +86,6 @@ fun NotesScreen(
         },
     ) { paddingValues ->
         Column(modifier = Modifier.padding(paddingValues)) {
-            TabRow(
-                selectedTabIndex = selectedTab,
-                containerColor = MaterialTheme.colorScheme.background
-            ) {
-                Tab(
-                    text = {
-                        Text(
-                            stringResource(R.string.notes),
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                    },
-                    selected = selectedTab == 0,
-                    onClick = {
-                        selectedTab = 0
-                    },
-                    unselectedContentColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
-                )
-                Tab(
-                    text = {
-                        Text(
-                            stringResource(R.string.folders),
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                    },
-                    selected = selectedTab == 1,
-                    onClick = {
-                        selectedTab = 1
-                    },
-                    unselectedContentColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
-                )
-            }
-            if (selectedTab == 0) {
                 if (uiState.notes.isEmpty())
                     NoNotesMessage()
                 Row(
@@ -209,82 +167,11 @@ fun NotesScreen(
                                 )
                             }
                         }
-                    }
-                }
-            } else {
-                FoldersTab(uiState.folders) {
-                    navController.navigate(
-                        Screen.NoteFolderDetailsScreen(
-                            folderId = it.id
-                        )
-                    )
-                }
-                if (openCreateFolderDialog)
-                    CreateFolderDialog(
-                        onCreate = {
-                            viewModel.onEvent(NoteEvent.CreateFolder(NoteFolder(it.trim())))
-                            openCreateFolderDialog = false
-                        },
-                        onDismiss = {
-                            openCreateFolderDialog = false
-                        }
-                    )
-            }
-        }
-    }
-}
-
-@Composable
-fun FoldersTab(
-    folders: List<NoteFolder>,
-    onItemClick: (NoteFolder) -> Unit
-) {
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(
-            top = 12.dp,
-            bottom = 24.dp,
-            start = 12.dp,
-            end = 12.dp
-        )
-    ) {
-        items(folders) { folder ->
-            Card(
-                modifier = Modifier.height(180.dp),
-                shape = RoundedCornerShape(20.dp),
-                elevation = CardDefaults.elevatedCardElevation(
-                    8.dp
-                )
-            ) {
-                Column(
-                    Modifier
-                        .fillMaxSize()
-                        .clickable { onItemClick(folder) },
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_folder),
-                        contentDescription = folder.name,
-                        modifier = Modifier.size(100.dp)
-                    )
-                    Text(
-                        text = folder.name,
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
-                    )
                 }
             }
         }
     }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
+}@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun NotesSettingsSection(
     order: Order,
@@ -412,51 +299,4 @@ fun NoNotesMessage() {
             alpha = 0.7f
         )
     }
-}
-
-@Composable
-fun CreateFolderDialog(
-    onCreate: (String) -> Unit,
-    onDismiss: () -> Unit
-) {
-    var name by remember { mutableStateOf("") }
-    AlertDialog(
-        onDismissRequest = { onDismiss() },
-        title = {
-            Text(
-                text = stringResource(id = R.string.create_folder),
-                style = MaterialTheme.typography.titleLarge
-            )
-        },
-        text = {
-            TextField(
-                value = name,
-                onValueChange = { name = it },
-                label = {
-                    Text(
-                        text = stringResource(id = R.string.name),
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                },
-            )
-        },
-        confirmButton = {
-            Button(
-                shape = RoundedCornerShape(25.dp),
-                onClick = {
-                    onCreate(name)
-                },
-            ) {
-                Text(stringResource(R.string.create_folder), color = Color.White)
-            }
-        },
-        dismissButton = {
-            TextButton(
-                shape = RoundedCornerShape(25.dp),
-                onClick = { onDismiss() },
-            ) {
-                Text(stringResource(R.string.cancel), color = Color.White)
-            }
-        }
-    )
 }

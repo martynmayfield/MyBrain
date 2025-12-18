@@ -196,6 +196,82 @@ fun IntegrationsScreen(
                                         }
                                     )
                                 }
+                                Spacer(Modifier.height(8.dp))
+                                val grokKey by viewModel
+                                    .getSettings(
+                                        stringPreferencesKey(PrefsConstants.GROK_KEY),
+                                        ""
+                                    ).collectAsStateWithLifecycle("")
+                                val grokModel by viewModel
+                                    .getSettings(
+                                        stringPreferencesKey(PrefsConstants.GROK_MODEL_KEY),
+                                        AiConstants.GROK_DEFAULT_MODEL
+                                    ).collectAsStateWithLifecycle("")
+                                AiProviderCard(
+                                    name = stringResource(R.string.grok),
+                                    description = stringResource(R.string.grok_description),
+                                    selected = provider == AiProvider.Grok,
+                                    key = grokKey,
+                                    model = grokModel,
+                                    keyInfoURL = AiConstants.GROK_KEY_INFO_URL,
+                                    modelInfoURL = AiConstants.GROK_MODELS_INFO_URL,
+                                    onKeyChange = {
+                                        viewModel.saveSettings(
+                                            stringPreferencesKey(PrefsConstants.GROK_KEY),
+                                            it
+                                        )
+                                    },
+                                    onModelChange = {
+                                        viewModel.saveSettings(
+                                            stringPreferencesKey(PrefsConstants.GROK_MODEL_KEY),
+                                            it
+                                        )
+                                    },
+                                    onClick = {
+                                        viewModel.saveSettings(
+                                            PrefsKey.IntKey(PrefsConstants.AI_PROVIDER_KEY),
+                                            AiProvider.Grok.id
+                                        )
+                                    }
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                val deepseekKey by viewModel
+                                    .getSettings(
+                                        stringPreferencesKey(PrefsConstants.DEEPSEEK_KEY),
+                                        ""
+                                    ).collectAsStateWithLifecycle("")
+                                val deepseekModel by viewModel
+                                    .getSettings(
+                                        stringPreferencesKey(PrefsConstants.DEEPSEEK_MODEL_KEY),
+                                        AiConstants.DEEPSEEK_DEFAULT_MODEL
+                                    ).collectAsStateWithLifecycle("")
+                                AiProviderCard(
+                                    name = stringResource(R.string.deepseek),
+                                    description = stringResource(R.string.deepseek_description),
+                                    selected = provider == AiProvider.DeepSeek,
+                                    key = deepseekKey,
+                                    model = deepseekModel,
+                                    keyInfoURL = AiConstants.DEEPSEEK_KEY_INFO_URL,
+                                    modelInfoURL = AiConstants.DEEPSEEK_MODELS_INFO_URL,
+                                    onKeyChange = {
+                                        viewModel.saveSettings(
+                                            stringPreferencesKey(PrefsConstants.DEEPSEEK_KEY),
+                                            it
+                                        )
+                                    },
+                                    onModelChange = {
+                                        viewModel.saveSettings(
+                                            stringPreferencesKey(PrefsConstants.DEEPSEEK_MODEL_KEY),
+                                            it
+                                        )
+                                    },
+                                    onClick = {
+                                        viewModel.saveSettings(
+                                            PrefsKey.IntKey(PrefsConstants.AI_PROVIDER_KEY),
+                                            AiProvider.DeepSeek.id
+                                        )
+                                    }
+                                )
                             }
                         }
                     }

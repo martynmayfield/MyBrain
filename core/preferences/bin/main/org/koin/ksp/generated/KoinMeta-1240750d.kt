@@ -1,0 +1,7 @@
+package org.koin.ksp.generated
+
+public class _KSP_ComMhssAppPreferencesDiPreferencesModule
+public class _KSP_ComMhssAppPreferencesDomainUse_caseGetPreferenceUseCase
+public class _KSP_ComMhssAppPreferencesDomainUse_caseSavePreferenceUseCase
+public class _KSP_ComMhssAppPreferencesDataRepositoryPreferenceRepositoryImpl
+public fun _KSP_ComMhssAppPreferencesDomainRepositoryPreferenceRepository() : Unit = Unit

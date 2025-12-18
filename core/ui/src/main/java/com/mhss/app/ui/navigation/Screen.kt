@@ -34,8 +34,7 @@ sealed class Screen {
 
     @Serializable
     data class NoteDetailsScreen(
-        val noteId: Int = -1,
-        val folderId: Int = -1
+        val noteId: Int = -1
     ): Screen()
 
     @Serializable
@@ -72,10 +71,6 @@ sealed class Screen {
     data class CalendarEventDetailsScreen(
         val eventJson: String? = null
     ) : Screen()
-    @Serializable
-    data class NoteFolderDetailsScreen(
-        val folderId: Int
-    ): Screen()
     @Serializable
     data object ImportExportScreen : Screen()
 

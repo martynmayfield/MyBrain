@@ -1,8 +1,25 @@
 package com.mhss.app.presentation.di
 
-import org.koin.core.annotation.ComponentScan
-import org.koin.core.annotation.Module
+import com.mhss.app.presentation.NoteDetailsViewModel
+import com.mhss.app.presentation.NotesViewModel
+import org.koin.core.module.Module
+import org.koin.core.module.dsl.viewModel
+import org.koin.core.module.dsl.viewModelOf
+import org.koin.core.qualifier.named
+import org.koin.dsl.module
 
-@Module
-@ComponentScan("com.mhss.app.presentation")
-class NotePresentationModule
+val notePresentationModule: Module = module {
+    viewModelOf(::NotesViewModel)
+    viewModel { (id: Int) ->
+        NoteDetailsViewModel(
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(named("applicationScope")),
+            id
+        )
+    }
+}

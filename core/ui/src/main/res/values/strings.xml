@@ -185,11 +185,17 @@
     <string name="ai">AI</string>
     <string name="gemini">Gemini</string>
     <string name="openai">OpenAI</string>
+    <string name="grok">Grok</string>
+    <string name="deepseek">DeepSeek</string>
     <string name="model">Model</string>
     <string name="gemini_description">Gemini models from Google</string>
     <string name="openai_description">GPT models from OpenAI.\nYou can also use any OpenAI compatible API like Groq or a self hosted option by adding a custom URL</string>
+    <string name="grok_description">Grok models from xAI</string>
+    <string name="deepseek_description">DeepSeek models from DeepSeek</string>
     <string name="custom_url">Custom URL</string>
     <string name="auto_format">Auto format</string>
+    <string name="auto_title">Auto title</string>
+    <string name="voice_input">Voice input</string>
     <string name="correct_spelling">Correct spelling</string>
     <string name="copy">Copy</string>
     <string name="replace">Replace</string>

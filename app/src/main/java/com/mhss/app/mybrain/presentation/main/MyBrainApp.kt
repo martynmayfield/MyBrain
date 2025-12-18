@@ -55,7 +55,6 @@ import com.mhss.app.presentation.DiarySearchScreen
 import com.mhss.app.presentation.ImportExportScreen
 import com.mhss.app.presentation.integrations.IntegrationsScreen
 import com.mhss.app.presentation.NoteDetailsScreen
-import com.mhss.app.presentation.NoteFolderDetailsScreen
 import com.mhss.app.presentation.NotesScreen
 import com.mhss.app.presentation.NotesSearchScreen
 import com.mhss.app.presentation.TaskDetailScreen
@@ -215,8 +214,7 @@ fun MyBrainApp(
                         val args = it.toRoute<Screen.NoteDetailsScreen>()
                         NoteDetailsScreen(
                             navController,
-                            args.noteId,
-                            args.folderId
+                            args.noteId
                         )
                     }
                     composable<Screen.NoteSearchScreen>(
@@ -300,16 +298,6 @@ fun MyBrainApp(
                         CalendarEventDetailsScreen(
                             navController = navController,
                             eventJson = args.eventJson
-                        )
-                    }
-                    composable<Screen.NoteFolderDetailsScreen>(
-                        enterTransition = { slideInTransition() },
-                        exitTransition = { slideOutTransition() },
-                    ) {
-                        val args = it.toRoute<Screen.NoteFolderDetailsScreen>()
-                        NoteFolderDetailsScreen(
-                            navController = navController,
-                            args.folderId
                         )
                     }
                     composable<Screen.ImportExportScreen>(

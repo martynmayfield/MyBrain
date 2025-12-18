@@ -8,18 +8,7 @@ import com.mhss.app.domain.model.Note
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-@Entity(
-    tableName = "notes",
-    foreignKeys = [
-        ForeignKey(
-            entity = NoteFolderEntity::class,
-            parentColumns = ["id"],
-            childColumns = ["folder_id"],
-            onDelete = ForeignKey.CASCADE,
-            onUpdate = ForeignKey.NO_ACTION
-        )
-    ]
-)
+@Entity(tableName = "notes")
 @Serializable
 data class NoteEntity(
     @SerialName("title")
@@ -32,11 +21,6 @@ data class NoteEntity(
     @ColumnInfo(name = "updated_date")
     @SerialName("updatedDate")
     val updatedDate: Long = 0L,
-    @SerialName("pinned")
-    val pinned: Boolean = false,
-    @ColumnInfo(name = "folder_id")
-    @SerialName("folderId")
-    val folderId: Int? = null,
     @PrimaryKey(autoGenerate = true)
     @SerialName("id")
     val id: Int = 0,
@@ -48,8 +32,6 @@ fun NoteEntity.toNote(): Note {
         content = content,
         createdDate = createdDate,
         updatedDate = updatedDate,
-        pinned = pinned,
-        folderId = folderId,
         id = id,
     )
 }
@@ -60,8 +42,6 @@ fun Note.toNoteEntity(): NoteEntity {
         content = content,
         createdDate = createdDate,
         updatedDate = updatedDate,
-        pinned = pinned,
-        folderId = folderId,
         id = id
     )
 }

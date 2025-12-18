@@ -6,23 +6,17 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mhss.app.domain.AiConstants
-import com.mhss.app.domain.autoFormatNotePrompt
-import com.mhss.app.domain.correctSpellingNotePrompt
+import com.mhss.app.domain.autoGenerateTitlePrompt
 import com.mhss.app.domain.model.Note
-import com.mhss.app.domain.model.NoteFolder
-import com.mhss.app.domain.summarizeNotePrompt
+import com.mhss.app.network.NetworkResult
 import com.mhss.app.domain.use_case.AddNoteUseCase
 import com.mhss.app.domain.use_case.DeleteNoteUseCase
-import com.mhss.app.domain.use_case.GetAllNoteFoldersUseCase
-import com.mhss.app.domain.use_case.GetNoteFolderUseCase
 import com.mhss.app.domain.use_case.GetNoteUseCase
 import com.mhss.app.domain.use_case.SendAiPromptUseCase
 import com.mhss.app.domain.use_case.UpdateNoteUseCase
-import com.mhss.app.network.NetworkResult
 import com.mhss.app.preferences.PrefsConstants
 import com.mhss.app.preferences.domain.model.AiProvider
 import com.mhss.app.preferences.domain.model.intPreferencesKey
-import com.mhss.app.preferences.domain.model.stringPreferencesKey
 import com.mhss.app.preferences.domain.use_case.GetPreferenceUseCase
 import com.mhss.app.util.date.now
 import kotlinx.coroutines.CoroutineScope
@@ -37,22 +31,17 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.koin.android.annotation.KoinViewModel
 import org.koin.core.annotation.Named
 
-@KoinViewModel
 class NoteDetailsViewModel(
     private val getNote: GetNoteUseCase,
     private val updateNote: UpdateNoteUseCase,
     private val addNote: AddNoteUseCase,
     private val deleteNote: DeleteNoteUseCase,
-    private val getPreference: GetPreferenceUseCase,
-    private val getAllFolders: GetAllNoteFoldersUseCase,
-    private val getNoteFolder: GetNoteFolderUseCase,
     private val sendAiPrompt: SendAiPromptUseCase,
+    private val getPreference: GetPreferenceUseCase,
     @Named("applicationScope") private val applicationScope: CoroutineScope,
     id: Int,
-    folderId: Int,
 ) : ViewModel() {
 
     var noteUiState by mutableStateOf(UiState())
@@ -66,61 +55,17 @@ class NoteDetailsViewModel(
     private var autoSaveJob: Job? = null
     private val debounceTime = 2000L
 
-    private lateinit var aiKey: String
-    private lateinit var aiModel: String
-    private lateinit var openaiURL: String
     private val _aiEnabled = MutableStateFlow(false)
     val aiEnabled: StateFlow<Boolean> = _aiEnabled
     var aiState by mutableStateOf((AiState()))
         private set
     private var aiActionJob: Job? = null
 
-    private val aiProvider =
-        getPreference(intPreferencesKey(PrefsConstants.AI_PROVIDER_KEY), AiProvider.None.id)
-            .map { id -> AiProvider.entries.first { it.id == id } }
-            .onEach { provider ->
-                _aiEnabled.update { provider != AiProvider.None }
-                when (provider) {
-                    AiProvider.OpenAI -> {
-                        aiKey = getPreference(
-                            stringPreferencesKey(PrefsConstants.OPENAI_KEY),
-                            ""
-                        ).first()
-                        aiModel = getPreference(
-                            stringPreferencesKey(PrefsConstants.OPENAI_MODEL_KEY),
-                            AiConstants.OPENAI_DEFAULT_MODEL
-                        ).first()
-                        openaiURL = getPreference(
-                            stringPreferencesKey(PrefsConstants.OPENAI_URL_KEY),
-                            AiConstants.OPENAI_BASE_URL
-                        ).first()
-                    }
-
-                    AiProvider.Gemini -> {
-                        aiKey = getPreference(
-                            stringPreferencesKey(PrefsConstants.GEMINI_KEY),
-                            ""
-                        ).first()
-                        aiModel = getPreference(
-                            stringPreferencesKey(PrefsConstants.GEMINI_MODEL_KEY),
-                            AiConstants.GEMINI_DEFAULT_MODEL
-                        ).first()
-                        openaiURL = ""
-                    }
-
-                    else -> {
-                        aiKey = ""
-                        aiModel = ""
-                        openaiURL = ""
-                    }
-                }
-            }.stateIn(viewModelScope, SharingStarted.Eagerly, AiProvider.None)
+    // AI is disabled on Android
 
     init {
         viewModelScope.launch {
             val note: Note? = if (id != -1) getNote(id) else null
-            val folder = getNoteFolder(note?.folderId ?: folderId)
-            val folders = getAllFolders().first()
 
             if (note != null) {
                 title = note.title
@@ -129,11 +74,13 @@ class NoteDetailsViewModel(
 
             noteUiState = noteUiState.copy(
                 note = note,
-                folder = folder,
-                folders = folders,
-                readingMode = note != null,
-                pinned = note?.pinned ?: false
+                readingMode = note != null
             )
+        }
+        viewModelScope.launch {
+            getPreference(intPreferencesKey(PrefsConstants.AI_PROVIDER_KEY), AiProvider.None.id).collect { providerId ->
+                _aiEnabled.value = AiProvider.entries.find { it.id == providerId } != AiProvider.None
+            }
         }
     }
 
@@ -164,37 +111,48 @@ class NoteDetailsViewModel(
                 saveNoteWithDebounce()
             }
 
-            is NoteDetailsEvent.UpdateFolder -> {
-                noteUiState = noteUiState.copy(folder = event.folder)
-                saveNoteWithDebounce()
-            }
-
-            is NoteDetailsEvent.UpdatePinned -> {
-                noteUiState = noteUiState.copy(pinned = event.pinned)
-                saveNoteWithDebounce()
-            }
-
             is AiAction -> aiActionJob = viewModelScope.launch {
-                val prompt = when (event) {
-                    is NoteDetailsEvent.Summarize -> event.content.summarizeNotePrompt
-                    is NoteDetailsEvent.AutoFormat -> event.content.autoFormatNotePrompt
-                    is NoteDetailsEvent.CorrectSpelling -> event.content.correctSpellingNotePrompt
+                val isTitleGeneration = event is NoteDetailsEvent.AutoGenerateTitle
+                aiState = aiState.copy(loading = true, showAiSheet = true, error = null)
+                val prompt = if (isTitleGeneration) {
+                    event.content.autoGenerateTitlePrompt
+                } else {
+                    // For other actions, but currently only title is implemented
+                    ""
                 }
-                aiState = aiState.copy(
-                    loading = true,
-                    showAiSheet = true,
-                    result = null,
-                    error = null
-                )
                 val result = sendAiPrompt(prompt)
                 aiState = when (result) {
-                    is NetworkResult.Success -> aiState.copy(
-                        loading = false,
-                        result = result.data,
-                        error = null
-                    )
-
-                    is NetworkResult.Failure -> aiState.copy(error = result, loading = false)
+                    is NetworkResult.Success -> {
+                        if (isTitleGeneration) {
+                            title = result.data
+                        }
+                        aiState.copy(
+                            loading = false,
+                            result = if (isTitleGeneration) null else result.data,
+                            error = null
+                        )
+                    }
+                    is NetworkResult.InvalidKey -> {
+                        aiState.copy(
+                            loading = false,
+                            result = null,
+                            error = "Invalid API key"
+                        )
+                    }
+                    is NetworkResult.InternetError -> {
+                        aiState.copy(
+                            loading = false,
+                            result = null,
+                            error = "No internet connection"
+                        )
+                    }
+                    is NetworkResult.OtherError -> {
+                        aiState.copy(
+                            loading = false,
+                            result = null,
+                            error = result.message ?: "Unknown error"
+                        )
+                    }
                 }
             }
 
@@ -203,16 +161,13 @@ class NoteDetailsViewModel(
                 aiActionJob = null
                 aiState = aiState.copy(showAiSheet = false)
             }
+
+            NoteDetailsEvent.StartVoiceInput -> {
+                // TODO: Implement voice input using speech recognition
+                // This would require microphone permissions and speech-to-text API
+            }
         }
     }
-
-    private suspend fun sendAiPrompt(prompt: String) = sendAiPrompt(
-        prompt,
-        aiKey,
-        aiModel,
-        aiProvider.value,
-        openaiURL
-    )
 
     private fun saveNoteWithDebounce() {
         autoSaveJob?.cancel()
@@ -225,16 +180,20 @@ class NoteDetailsViewModel(
     private suspend fun saveNote() {
         if (noteUiState.navigateUp) return
 
-        val folderId = noteUiState.folder?.id
-        val pinned = noteUiState.pinned
-
         if (noteUiState.note == null) {
             if (title.isNotBlank() || content.isNotBlank()) {
+                var finalTitle = title
+                if (finalTitle.isBlank() && content.isNotBlank()) {
+                    val prompt = content.autoGenerateTitlePrompt
+                    val result = sendAiPrompt(prompt)
+                    if (result is NetworkResult.Success) {
+                        finalTitle = result.data
+                        title = finalTitle // Update the state
+                    }
+                }
                 val note = Note(
-                    title = title,
+                    title = finalTitle,
                     content = content,
-                    folderId = folderId,
-                    pinned = pinned,
                     createdDate = now(),
                     updatedDate = now()
                 )
@@ -244,15 +203,11 @@ class NoteDetailsViewModel(
         } else {
             val currentNote = noteUiState.note!!
             if (currentNote.title != title ||
-                currentNote.content != content ||
-                currentNote.folderId != folderId ||
-                currentNote.pinned != pinned
+                currentNote.content != content
             ) {
                 val newNote = currentNote.copy(
                     title = title,
                     content = content,
-                    folderId = folderId,
-                    pinned = pinned,
                     updatedDate = now()
                 )
                 updateNote(newNote)
@@ -264,16 +219,13 @@ class NoteDetailsViewModel(
     data class UiState(
         val note: Note? = null,
         val navigateUp: Boolean = false,
-        val readingMode: Boolean = false,
-        val folders: List<NoteFolder> = emptyList(),
-        val folder: NoteFolder? = null,
-        val pinned: Boolean = false
+        val readingMode: Boolean = false
     )
 
     data class AiState(
         val loading: Boolean = false,
         val result: String? = null,
-        val error: NetworkResult.Failure? = null,
+        val error: String? = null,
         val showAiSheet: Boolean = false,
     )
 }

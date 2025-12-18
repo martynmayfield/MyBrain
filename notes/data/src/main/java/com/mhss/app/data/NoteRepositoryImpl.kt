@@ -3,10 +3,7 @@ package com.mhss.app.data
 import com.mhss.app.database.dao.NoteDao
 import com.mhss.app.database.entity.toNote
 import com.mhss.app.database.entity.toNoteEntity
-import com.mhss.app.database.entity.toNoteFolder
-import com.mhss.app.database.entity.toNoteFolderEntity
 import com.mhss.app.domain.model.Note
-import com.mhss.app.domain.model.NoteFolder
 import com.mhss.app.domain.repository.NoteRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
@@ -22,8 +19,8 @@ class NoteRepositoryImpl(
     @Named("ioDispatcher") private val ioDispatcher: CoroutineDispatcher
 ) : NoteRepository {
 
-    override fun getAllFolderlessNotes(): Flow<List<Note>> {
-        return noteDao.getAllFolderlessNotes()
+    override fun getAllNotes(): Flow<List<Note>> {
+        return noteDao.getAllNotes()
             .flowOn(ioDispatcher)
             .map { notes ->
                 notes.map {
@@ -46,14 +43,6 @@ class NoteRepositoryImpl(
         }
     }
 
-    override fun getNotesByFolder(folderId: Int): Flow<List<Note>> {
-        return noteDao.getNotesByFolder(folderId)
-            .flowOn(ioDispatcher)
-            .map { notes ->
-            notes.map { it.toNote() }
-        }
-    }
-
     override suspend fun addNote(note: Note): Long {
         return withContext(ioDispatcher) {
             noteDao.insertNote(note.toNoteEntity())
@@ -69,38 +58,6 @@ class NoteRepositoryImpl(
     override suspend fun deleteNote(note: Note) {
         withContext(ioDispatcher) {
             noteDao.deleteNote(note.toNoteEntity())
-        }
-    }
-
-    override suspend fun insertNoteFolder(folder: NoteFolder) {
-        withContext(ioDispatcher) {
-            noteDao.insertNoteFolder(folder.toNoteFolderEntity())
-        }
-    }
-
-    override suspend fun updateNoteFolder(folder: NoteFolder) {
-        withContext(ioDispatcher) {
-            noteDao.updateNoteFolder(folder.toNoteFolderEntity())
-        }
-    }
-
-    override suspend fun deleteNoteFolder(folder: NoteFolder) {
-        withContext(ioDispatcher) {
-            noteDao.deleteNoteFolder(folder.toNoteFolderEntity())
-        }
-    }
-
-    override fun getAllNoteFolders(): Flow<List<NoteFolder>> {
-        return noteDao.getAllNoteFolders()
-            .flowOn(ioDispatcher)
-            .map { folders ->
-            folders.map { it.toNoteFolder() }
-        }
-    }
-
-    override suspend fun getNoteFolder(folderId: Int): NoteFolder? {
-        return withContext(ioDispatcher) {
-            noteDao.getNoteFolder(folderId)?.toNoteFolder()
         }
     }
 }

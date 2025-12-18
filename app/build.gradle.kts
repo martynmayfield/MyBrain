@@ -81,6 +81,7 @@ dependencies {
     implementation(project(":diary:data"))
     implementation(project(":calendar:data"))
     implementation(project(":ai:data"))
+    implementation(project(":ai:domain"))
     implementation(project(":settings:data"))
 
     implementation(project(":tasks:domain"))

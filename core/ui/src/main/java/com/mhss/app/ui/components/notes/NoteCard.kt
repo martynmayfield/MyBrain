@@ -29,9 +29,6 @@ import com.mhss.app.domain.model.Note
 import com.mhss.app.ui.R
 import com.mhss.app.ui.theme.Orange
 import com.mhss.app.util.date.formatDateDependingOnDay
-import com.mikepenz.markdown.m3.Markdown
-import com.mikepenz.markdown.m3.markdownColor
-import com.mikepenz.markdown.m3.markdownTypography
 
 @Composable
 fun NoteCard(
@@ -57,16 +54,6 @@ fun NoteCard(
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                if (note.pinned) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_pin_filled),
-                        contentDescription = stringResource(R.string.pin_note),
-                        tint = Orange,
-                        modifier = Modifier
-                            .size(16.dp)
-                    )
-                    Spacer(Modifier.width(4.dp))
-                }
                 Text(
                     note.title,
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
@@ -75,22 +62,11 @@ fun NoteCard(
                 )
             }
             Spacer(Modifier.height(8.dp))
-            Markdown(
-                content = note.content,
-                colors = markdownColor(
-                    linkText = Color.Blue
-                ),
-                typography = markdownTypography(
-                    text = MaterialTheme.typography.bodyMedium,
-                    h1 = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                    h2 = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                    h3 = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                    h4 = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    h5 = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                    h6 = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                    code = MaterialTheme.typography.bodySmall,
-                    paragraph = MaterialTheme.typography.bodyMedium,
-                )
+            Text(
+                text = note.content.take(200) + if (note.content.length > 200) "..." else "",
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis
             )
             Spacer(Modifier.height(8.dp))
             Text(

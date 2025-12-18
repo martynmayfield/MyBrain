@@ -27,3 +27,12 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
         db.execSQL("ALTER TABLE tasks ADD COLUMN frequency_amount INTEGER NOT NULL DEFAULT 1")
     }
 }
+
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS `notes_new` (`title` TEXT NOT NULL, `content` TEXT NOT NULL, `created_date` INTEGER NOT NULL, `updated_date` INTEGER NOT NULL, `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL)")
+        db.execSQL("INSERT INTO notes_new (title, content, created_date, updated_date, id) SELECT title, content, created_date, updated_date, id FROM notes")
+        db.execSQL("DROP TABLE notes")
+        db.execSQL("ALTER TABLE notes_new RENAME TO notes")
+    }
+}
